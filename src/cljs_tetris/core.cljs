@@ -1,22 +1,23 @@
 (ns cljs-tetris.core
-  (:require [reagent.core :as reagent :refer [atom]]))
+  (:require [monet.canvas :as canvas]))
 
 (enable-console-print!)
 
-(println "This text is printed from src/cljs-tetris/core.cljs. Go ahead and edit it and see reloading in action.")
+(def canvas-dom (.getElementById js/document "tetris"))
+(assert (not (nil? canvas-dom)) "HTML should contain a <canvas id='tetris'> element")
 
-;; define your app data so that it doesn't get over-written on reload
+(def canvas-w 400)
+(def canvas-h 500)
 
-(defonce app-state (atom {:text "Hello world!"}))
+(set! (.-width canvas-dom) canvas-w) 
+(set! (.-height canvas-dom) canvas-h) 
 
-(defn hello-world []
-  [:h1 (:text @app-state)])
+(def monet-canvas (canvas/init canvas-dom "2d"))
 
-(reagent/render-component [hello-world]
-                          (. js/document (getElementById "app")))
-
-(defn on-js-reload []
-  ;; optionally touch your app-state to force rerendering depending on
-  ;; your application
-  ;; (swap! app-state update-in [:__figwheel_counter] inc)
-)
+(canvas/add-entity monet-canvas :background
+                   (canvas/entity {:x 0 :y 0 :w canvas-w :h canvas-h} ; val
+                                  nil                       ; update function
+                                  (fn [ctx val]             ; draw function
+                                    (-> ctx
+                                        (canvas/fill-style "#191d21")
+                                        (canvas/fill-rect val)))))
