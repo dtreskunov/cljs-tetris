@@ -4,13 +4,14 @@
             [goog.events :as gevents]))
 
 (defn init! [element-id]
-  (let [element (.getElementById js/document element-id)]
+  (let [element (.getElementById js/document element-id)
+        resize! (fn []
+                 (set! (.-width element) (.-clientWidth element))
+                 (set! (.-height element) (.-clientHeight element)))]
     (assert (not (nil? element)) (str "HTML should contain an element with id" element-id))
     (assert (= "CANVAS" (.-tagName element)) (str "Element with id " element-id " should be a <canvas>"))
-    (gevents/listen js/window goog.events.EventType.RESIZE
-                    (fn [evt]
-                      (set! (.-width element) (.-clientWidth element))
-                      (set! (.-height element) (.-clientHeight element))))
+    (resize!)
+    (gevents/listen js/window goog.events.EventType.RESIZE resize!)
     
     (canvas/init element)))
 

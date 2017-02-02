@@ -9,7 +9,7 @@
 (def the-canvas (canvas/init! "tetris"))
 
 (-> the-canvas
-    (canvas/add-background! "#333")
+    (canvas/add-background! "#000")
     (canvas/add-fps-counter!))
 
 (defn add-random-bubble []
@@ -19,8 +19,8 @@
         r (rand-range 20 300)]
     (canvas/add-bubble!
       the-canvas
-      :x (rand-int (:w box))
-      :y (rand-int (:h box))
+      :x (rand-range (- r) (+ r (:w box)))
+      :y (rand-range (- r) (+ r (:h box)))
       :x' (rand-range -100 100)
       :y' (rand-range -100 100)
       :r r
