@@ -64,42 +64,43 @@
       (or (< (:x cbr) (:x tl))
           (< (:y cbr) (:y tl))))))
 
-(defn add-bubble! [canvas & {:keys [x x' y y' r color scale-x scale-y] :as val}]
+(defn- fill-style [ctx style]
+  (set! (.-fillStyle ctx) style)
+  ctx)
+
+(defn add-bubble! [canvas & {:keys [x x' y y' r color] :as init-val}]
+  (defn bubble-fill-style! [ctx color]
+    (let [gradient (.createRadialGradient ctx 40 40 0 0 0 100)]
+      (.addColorStop gradient 0    (str "rgba(" (color :r) "," (color :g) "," (color :b) "," 0   ")"))
+      (.addColorStop gradient 0.7  (str "rgba(" (color :r) "," (color :g) "," (color :b) "," 0.1 ")"))
+      (.addColorStop gradient 0.95 (str "rgba(" (color :r) "," (color :g) "," (color :b) "," 1   ")"))
+      (.addColorStop gradient 1    (str "rgba(" (color :r) "," (color :g) "," (color :b) "," 0   ")"))
+      (set! (.-fillStyle ctx) gradient)
+      ctx))
+    
   (let [k (gensym "bouncy-ball")
         box (make-bounding-box canvas)
-        update (let [t (atom 0)]
-                 (fn [val dt]
-                   (reset! t (+ @t dt))
-                   (let [x (:x val)
-                         y (:y val)
-                         dx (* x' (/ dt 1000))
-                         dy (* y' (/ dt 1000))
-                         newx (+ x dx)
-                         newy (+ y dy)]
-                     (if (outside? box val)
-                       (canvas/remove-entity canvas k)
-                       (assoc val
-                         :x newx
-                         :y newy
-                         :scale-x (+ 0.9 (* 0.1 (.sin js/Math (/ @t 200))))
-                         :scale-y (+ 0.9 (* 0.1 (.sin js/Math (/ @t 200)) -1)))))))
+        t (atom 0)
+        val (assoc init-val :r 0)
+        update (fn [{:keys [x y r] :as val} dt]
+         (reset! t (+ @t dt))
+         (let [dx (* x' (/ dt 1000))
+               dy (* y' (/ dt 1000))
+               dr (* 5 (.sqrt js/Math (+ (* dx dx) (* dy dy )))) 
+               newval (assoc val
+                             :x (+ x dx)
+                             :y (+ y dy)
+                             :r (min (+ r dr) (:r init-val)))]
+           (if (outside? box newval)
+             (canvas/remove-entity canvas k)
+             newval)))
         draw (fn [ctx {:keys [x y r scale-x scale-y] :as val}]
                (-> ctx
-                   (canvas/save)
-                   (canvas/translate x y)
-                   (canvas/scale scale-x scale-y)
-                   (canvas/circle {:x 0 :y 0 :r r})
-                   (canvas/stroke-style "white")
-                   (canvas/stroke-width 2)
-                   (canvas/stroke)
-                   (canvas/fill-style color)
-                   (canvas/fill)
-                   (canvas/translate 0 (- (/ r 2)))
-                   (canvas/scale 1 0.8)
-                   (canvas/circle {:x 0 :y 0 :r (/ r 2)})
-                   (canvas/fill-style "white")
-                   (canvas/alpha 0.5)
-                   (canvas/fill)
-                   (canvas/restore)))]
+                    (canvas/save)
+                    (canvas/translate x y)
+                    (canvas/scale (/ r 100) (/ r 100))
+                    (bubble-fill-style! color)
+                    (canvas/fill-rect {:x (- 100) :y (- 100) :w 200 :h 200})
+                    (canvas/restore)))]
     (canvas/add-entity canvas k (canvas/entity val update draw)))
   canvas)

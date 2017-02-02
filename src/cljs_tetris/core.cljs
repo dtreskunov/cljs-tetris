@@ -14,19 +14,17 @@
 
 (defn add-random-bubble []
   (defn rand-range [a b] (+ a (rand (- b a))))
-  (defn rand-color [] (str "rgb(" (rand-int 255) "," (rand-int 255) "," (rand-int 255) ")"))
+  (defn rand-color [] {:r (rand-int 255) :g (rand-int 255) :b (rand-int 255)})
   (let [box (canvas/make-bounding-box the-canvas)
-        r (rand-range 5 30)]
+        r (rand-range 20 300)]
     (canvas/add-bubble!
       the-canvas
       :x (rand-int (:w box))
       :y (rand-int (:h box))
       :x' (rand-range -100 100)
-      :y' (rand-range -30 30)
+      :y' (rand-range -100 100)
       :r r
-      :color (rand-color)
-      :scale-x 1
-      :scale-y 1)))
+      :color (rand-color))))
 
 (defn schedule [ms callback & args]
   (go-loop
