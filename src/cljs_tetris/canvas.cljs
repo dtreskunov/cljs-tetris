@@ -1,13 +1,17 @@
 (ns cljs-tetris.canvas
   (:require [monet.canvas :as canvas]
-            [monet.geometry :as geometry]))
+            [monet.geometry :as geometry]
+            [goog.events :as gevents]))
 
-(defn init! [element-id w h]
+(defn init! [element-id]
   (let [element (.getElementById js/document element-id)]
     (assert (not (nil? element)) (str "HTML should contain an element with id" element-id))
     (assert (= "CANVAS" (.-tagName element)) (str "Element with id " element-id " should be a <canvas>"))
-    (set! (.-width element) w)
-    (set! (.-height element) h)
+    (gevents/listen js/window goog.events.EventType.RESIZE
+                    (fn [evt]
+                      (set! (.-width element) (.-clientWidth element))
+                      (set! (.-height element) (.-clientHeight element))))
+    
     (canvas/init element)))
 
 (defn make-bounding-box [canvas]
@@ -19,12 +23,12 @@
   (canvas/add-entity
     canvas :background
     (let
-      [val (make-bounding-box canvas)
+      [val nil
        update nil
        draw (fn [ctx val]
               (-> ctx
                   (canvas/fill-style color)
-                  (canvas/fill-rect val)))]
+                  (canvas/fill-rect (make-bounding-box canvas))))]
       (canvas/entity val update draw)))
   canvas)
 

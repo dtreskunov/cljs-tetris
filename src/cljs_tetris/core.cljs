@@ -6,7 +6,7 @@
 
 (enable-console-print!)
 
-(def the-canvas (canvas/init! "tetris" 800 600))
+(def the-canvas (canvas/init! "tetris"))
 
 (-> the-canvas
     (canvas/add-background! "#333")
