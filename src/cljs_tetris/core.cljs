@@ -1,23 +1,38 @@
 (ns cljs-tetris.core
-  (:require [monet.canvas :as canvas]))
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require
+    [cljs-tetris.canvas :as canvas]
+    [cljs.core.async :refer [put! chan <! >! timeout close!]]))
 
 (enable-console-print!)
 
-(def canvas-dom (.getElementById js/document "tetris"))
-(assert (not (nil? canvas-dom)) "HTML should contain a <canvas id='tetris'> element")
+(def the-canvas (canvas/init! "tetris" 800 600))
 
-(def canvas-w 400)
-(def canvas-h 500)
+(-> the-canvas
+    (canvas/add-background! "#333")
+    (canvas/add-fps-counter!))
 
-(set! (.-width canvas-dom) canvas-w) 
-(set! (.-height canvas-dom) canvas-h) 
+(defn add-random-bubble []
+  (defn rand-range [a b] (+ a (rand (- b a))))
+  (defn rand-color [] (str "rgb(" (rand-int 255) "," (rand-int 255) "," (rand-int 255) ")"))
+  (let [box (canvas/make-bounding-box the-canvas)
+        r (rand-range 5 30)]
+    (canvas/add-bubble!
+      the-canvas
+      :x (rand-int (:w box))
+      :y (rand-int (:h box))
+      :x' (rand-range -100 100)
+      :y' (rand-range -30 30)
+      :r r
+      :color (rand-color)
+      :scale-x 1
+      :scale-y 1)))
 
-(def monet-canvas (canvas/init canvas-dom "2d"))
+(defn schedule [ms callback & args]
+  (go-loop
+    []
+    (callback args)
+    (<! (timeout ms))
+    (recur)))
 
-(canvas/add-entity monet-canvas :background
-                   (canvas/entity {:x 0 :y 0 :w canvas-w :h canvas-h} ; val
-                                  nil                       ; update function
-                                  (fn [ctx val]             ; draw function
-                                    (-> ctx
-                                        (canvas/fill-style "#191d21")
-                                        (canvas/fill-rect val)))))
+(schedule 500 add-random-bubble)
